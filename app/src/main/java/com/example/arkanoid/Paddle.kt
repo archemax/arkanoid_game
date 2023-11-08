@@ -7,8 +7,8 @@ const val LEFT = 1
 const val RIGHT = 2
 class Paddle(screenX: Int, screenY: Int) {
     //size of paddle
-    private var length: Float = 130F
-    private var height: Float = 20F
+    private var length: Float = 180F
+    private var height: Float = 30F
 
     // X is the far left of the rectangle which forms our paddle
     private var x: Float = screenX / 2F
