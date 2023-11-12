@@ -5,10 +5,10 @@ import android.graphics.RectF
 const val STOPPED = 0
 const val LEFT = 1
 const val RIGHT = 2
-class Paddle(screenX: Int, screenY: Int) {
+class Paddle(val screenX: Int, screenY: Int) {
     //size of paddle
-    private var length: Float = 180F
-    private var height: Float = 30F
+    private var length: Float = 280F
+    private var height: Float = 40F
 
     // X is the far left of the rectangle which forms our paddle
     private var x: Float = screenX / 2F
@@ -46,6 +46,13 @@ class Paddle(screenX: Int, screenY: Int) {
 
         if (paddleMoving == RIGHT) {
             x = x + paddleSpeed / fps;
+        }
+
+        if (x < 0){
+            x = 0f
+        }
+        if (x + length > screenX){
+            x = (screenX - length).toFloat()
         }
 
         rectF.left = x;
