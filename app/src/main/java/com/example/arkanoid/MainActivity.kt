@@ -1,42 +1,33 @@
 package com.example.arkanoid
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Point
 import android.os.Bundle
-import android.util.Log
-import android.view.MotionEvent
-
-import android.view.SurfaceHolder
-import android.view.SurfaceView
-
-
-class BreakoutGame : Activity() {
-    lateinit var breakoutView: BreakoutView
-
-
+import androidx.activity.ComponentActivity
+import com.example.arkanoid.game_part.BreakoutViewGame
+import com.example.arkanoid.utils.FullScreen
+import dagger.hilt.android.AndroidEntryPoint
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    var breakoutView: BreakoutViewGame? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        breakoutView = BreakoutView(context = this)
+
+        FullScreen.fullScreen(this)
+
+        breakoutView = BreakoutViewGame(this)
         setContentView(breakoutView)
+
+
     }
 
-
-    protected override fun onResume() {
+    override fun onResume() {
         super.onResume()
-        breakoutView.resume()
+        breakoutView?.resume()
     }
 
 
-    protected override fun onPause() {
+    override fun onPause() {
         super.onPause()
-
-        // Tell the gameView pause method to execute
-        breakoutView.pause()
+        breakoutView?.pause()
     }
 
 

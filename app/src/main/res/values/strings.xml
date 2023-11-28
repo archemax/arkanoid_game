@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Arkanoid</string>
+    <string name="title_activity_splash_avtivity">SplashActivity</string>
+
+    <string name="title_activity_web_view">WebViewActivity</string>
+    <string name="hello_app">Arkanoid</string>
 </resources>

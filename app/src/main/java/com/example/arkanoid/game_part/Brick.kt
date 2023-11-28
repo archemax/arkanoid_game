@@ -1,15 +1,20 @@
-package com.example.arkanoid
+package com.example.arkanoid.game_part
 
 import android.graphics.RectF
 
-class Brick(row: Int, column: Int, width: Int, height: Int) {
+class Brick(
+    val row: Int,
+    column: Int,
+    width: Int,
+    height: Int
+) {
 
     val rectF: RectF
     private var isVisible: Boolean
 
     init {
         isVisible = true
-        val padding = 2
+        val padding = 4
         rectF = RectF(
             (column * width + padding).toFloat(),
             (row * height + padding).toFloat(),
@@ -18,15 +23,15 @@ class Brick(row: Int, column: Int, width: Int, height: Int) {
         )
     }
 
-    fun getRect():RectF{
+    fun getRect(): RectF {
         return this.rectF
     }
 
-    fun setInvisible(){
+    fun setInvisible() {
         isVisible = false
     }
 
-    fun getVisibility():Boolean{
+    fun getVisibility(): Boolean {
         return isVisible
     }
 }

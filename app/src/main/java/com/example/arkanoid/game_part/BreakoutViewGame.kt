@@ -1,24 +1,35 @@
-package com.example.arkanoid
+package com.example.arkanoid.game_part
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.RectF
-import android.media.SoundPool
 import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
-import androidx.window.layout.WindowMetricsCalculator
+import com.example.arkanoid.R
 
 
-class BreakoutView(context: Context) : SurfaceView(context), Runnable {
+class BreakoutViewGame(context: Context) : SurfaceView(context), Runnable {
+
+    private fun printDebugInfo() {
+        Log.d("BreakoutView", "screenX: $screenX, screenY: $screenY, bricks: $numberOfBricks")
+    }
+
+    fun debugPrintInfo() {
+        printDebugInfo()
+        // Add other debug information if needed
+    }
+
+
     var screenX: Int = 0
     var screenY: Int = 0
-
     var gameThread: Thread? = null
     var ourHolder: SurfaceHolder = holder
     var paddle: Paddle
@@ -41,17 +52,25 @@ class BreakoutView(context: Context) : SurfaceView(context), Runnable {
     var lives: Int = 3
 
     init {
-        var size = Point()
-        var display = WindowMetricsCalculator.getOrCreate()
-            .computeCurrentWindowMetrics(context)
-        screenX = display.bounds.width() - getNavigationBarWidth()
-        screenY = display.bounds.height()
+
+//        val display = WindowMetricsCalculator.getOrCreate()
+//            .computeCurrentWindowMetrics(context)
+//        val cutout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//            WindowInsets.Type.displayCutout()
+//        } else 0
+//        screenX = display.bounds.width() - cutout
+//        screenY = display.bounds.height()
+
+
+        ///// alternative
+        val myDisplayMetrics = resources.displayMetrics
+        screenX = myDisplayMetrics.widthPixels
+        screenY = myDisplayMetrics.heightPixels
 
         paddle = Paddle(screenX, screenY)
-        ball = Ball(screenX = screenX, screenY = screenY)
+        ball = Ball(context = context, screenX = screenX, screenY = screenY)
         createBricksAndRestart()
     }
-
 
     // subtract the van bar wirth
     @SuppressLint("InternalInsetResource")
@@ -70,7 +89,7 @@ class BreakoutView(context: Context) : SurfaceView(context), Runnable {
 
         numberOfBricks = 0
         for (column in 0 until 8) {
-            for (row in 0 until 2) {
+            for (row in 0 until 3) {
                 bricks[numberOfBricks] = Brick(row, column, brickWidth, brickHeight)
                 numberOfBricks++
             }
@@ -81,6 +100,7 @@ class BreakoutView(context: Context) : SurfaceView(context), Runnable {
 
         score = 0
         lives = 3
+
 
     }
 
@@ -100,7 +120,7 @@ class BreakoutView(context: Context) : SurfaceView(context), Runnable {
     @Override
     override fun run() {
         while (playing) {
-            var startFrameTime: Long = System.currentTimeMillis()
+            val startFrameTime: Long = System.currentTimeMillis()
             if (!paused) {
                 update()
             }
@@ -120,26 +140,47 @@ class BreakoutView(context: Context) : SurfaceView(context), Runnable {
     }
 
     // now we draw a new uodated  scene
+    val backgroundImage: Bitmap =
+        BitmapFactory.decodeResource(context.resources, R.drawable.y_b_21)
+    private val rowColors = arrayOf(
+        // colors for rows
+        Color.argb(255, 157,101,219),
+        Color.argb(255, 195,100,219),
+        Color.argb(255, 219,105,124)
+
+    )
+
     fun draw() {
+
+        printDebugInfo()
 
         // make sure our suface in valid
         if (ourHolder.surface.isValid) {
 
             canvas = ourHolder.lockCanvas()
 
-            // draw background color
-            canvas.drawColor(Color.argb(255, 100, 120, 80))
-            paint.setColor(Color.argb(255, 255, 255, 255))
+            val playgroundBorder = RectF(0f, 0f, screenX.toFloat(), screenY.toFloat())
+            // draw background color only inside the border
+            val backgroundColor = Paint()
+            backgroundColor.color = Color.argb(255, 100, 120, 80)
+            //canvas.drawRect(playgroundBorder, backgroundColor)
+
+            canvas.drawBitmap(backgroundImage, null, playgroundBorder, null)
 
             // Draw the paddle
-            canvas.drawRect(paddle.getRectF(), paint)
+            val leftPaddleColor = Paint()
+            leftPaddleColor.color = Color.argb(255, 0, 180, 20) // Green color
+            canvas.drawRoundRect(paddle.leftRectF, 10f, 10f, leftPaddleColor)
+
+            // Draw the right part of the paddle in another color
+            val rightPaddleColor = Paint()
+            rightPaddleColor.color = Color.argb(255, 0, 20, 120) // Blue color
+            canvas.drawRoundRect(paddle.rightRectF, 10f, 10f, rightPaddleColor)
 
             // Draw the ball
-            canvas.drawRect(ball.getRectF(), paint)
+            ball.draw(canvas, paint)
 
             // Draw the bricks
-            paint.setColor(Color.argb(255, 249, 129, 0))
-
             for (i in 0 until numberOfBricks) {
                 if (bricks[i].getVisibility()) {
 
@@ -157,14 +198,45 @@ class BreakoutView(context: Context) : SurfaceView(context), Runnable {
                         ball.reverseYVelocity()
                         score = score + 10
                     }
-                    canvas.drawRect(bricks[i].getRect(), paint)
+
+                    //set the color accordint to the row
+                    val rowColor = rowColors[bricks[i].row]
+                    val bricksColors  = Paint()
+                    bricksColors.color  = rowColor
+                    canvas.drawRoundRect(bricks[i].getRect(), 10f, 10f, bricksColors)
+
+                    // draw "10" inside each brick
+                    val numberTextPaint = Paint()
+                    numberTextPaint.color = Color.BLACK
+                    numberTextPaint.textSize = 60f
+                    numberTextPaint.textAlign = Paint.Align.CENTER
+                    val textHeight = numberTextPaint.descent() - numberTextPaint.ascent()
+                    val textOffset = (textHeight / 2) - numberTextPaint.descent()
+                    val number10 = "10"
+                    canvas.drawText(number10,
+                        bricks[i].getRect().centerX(),
+                        bricks[i].getRect().centerY()+textOffset,
+                        numberTextPaint
+                    )
                 }
             }
+
             // Check for ball colliding with paddle
             if (RectF.intersects(paddle.getRectF(), ball.getRectF())) {
-                ball.setRandomVelocity();
-                ball.reverseYVelocity();
-                ball.clearObstacleY(paddle.getRectF().top - 2);///////////////////////// -2
+
+                val paddleCenterX = paddle.getRectF().centerX()
+                val ballCenterX = ball.getRectF().centerX()
+
+                if (ballCenterX < paddleCenterX) {
+                    ball.setXVelocity(-Math.abs(ball.xVelocity))
+                } else {
+                    ball.setXVelocity(Math.abs(ball.xVelocity))
+                }
+
+                ball.setYVelocity(-Math.abs(ball.yVelocity))
+
+                ball.setY(paddle.getRectF().top - ball.getHeight() - 2);
+
 
             }
 
@@ -172,16 +244,14 @@ class BreakoutView(context: Context) : SurfaceView(context), Runnable {
             if (ball.getRectF().bottom > screenY) {
                 ball.reverseYVelocity()
                 ball.reset(screenX, screenY)
+                paddle.reset()
                 paused = true
-                //ball.clearObstacleY(screenY - 2f)
 
                 // Lose a life
                 lives--
                 if (lives == 0) {
-                    paused = true;
-
+                    paused = true
                 }
-
             }
 
             // Bounce the ball back when it hits the top of screen
@@ -199,7 +269,7 @@ class BreakoutView(context: Context) : SurfaceView(context), Runnable {
             // If the ball hits right wall bounce
             if (ball.getRectF().right > screenX) {
                 ball.reverseXVelocity();
-                ball.clearObstacleX(screenX - 22f)
+                ball.clearObstacleX(screenX - 42f)
 
             }
             //Pause if cleared screen
@@ -208,35 +278,30 @@ class BreakoutView(context: Context) : SurfaceView(context), Runnable {
 
             }
 
-
-            paint.setColor(Color.argb(255, 255, 255, 255));
-            paint.setTextSize(50F)
+            //define the color and size of text
+            val textColorAndSize = Paint()
+            textColorAndSize.color = Color.argb(250, 250, 250, 250)
+            textColorAndSize.textSize = 50f
             canvas.drawText(
                 "Score: "
-                        + score + "   Lives: " + lives, 10f, 100f, paint
+                        + score + "   Lives: " + lives, 10f, 100f, textColorAndSize
             )
-
-
             // Draw everything to the screen
             // draw thw score
             // Has the player cleared the screen?
             if (score == numberOfBricks * 10) {
-                paint.setTextSize(90f)
-                canvas.drawText("YOU HAVE WON!", 10f, screenY / 2f, paint)
+                canvas.drawText("YOU HAVE WON!", 10f, screenY / 2f, textColorAndSize)
             }
-
             // Has the player lost?
             if (lives == 0) {
-                paint.setColor(Color.argb(255, 255, 255, 255));
-                paint.setTextSize(50f)
-                canvas.drawText("YOU HAVE LOST!", 10f, screenY / 2f, paint)
-
-
-                Log.d("youHaveLost", "$lives")
+                canvas.drawText("YOU HAVE LOST!", 10f, screenY / 2f, textColorAndSize)
             }
             ourHolder.unlockCanvasAndPost(canvas)
         }
+
+
     }
+
 
     // if game activity is pause - shutdown thread
     fun pause() {
